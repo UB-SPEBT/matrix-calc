@@ -1,0 +1,59 @@
+// Version: 1.0.0
+// Date: Dec-31-2022
+// Author: Fang Han [fhan0904@gmail.com]
+{
+    // Cuda settings
+    "CUDA setting": {
+        "CUDA Device ID": 1,
+        // "grid dim x": 2,
+        "Grid Dim X": 4,
+        "Grid Dim Y": 2,
+        // "block dim x": 32,
+        // "block dim y": 32
+        "Block Dim X": 2,
+        "Block Dim Y": 2
+    },
+    // Detector parameters
+    "Detector": {
+        "metalPlateMode": 0,
+        "crystalArrayMode": 1,
+        "Detector N Subdivision X": 1,
+        "Detector N Subdivision Y": 1,
+        "Detector N Subdivision Z": 1,
+        "N Panels": 1,
+        "N Modules Axial": 2,
+        "N Crystal Segments": 2,
+        "Module": {
+            "N Cells X": 2,
+            "N Cells Y": 2,
+            "N Cells Z": 2,
+            "Cell Length X": 3.36, // Unit mm
+            "Cell Length Y": 3.36, // Unit mm
+            "Cell Length Z": 2.0,  // Unit mm
+            "widthDetectorPixelY": 3.36,
+            "widthDetectorPixelZ": 2,
+            "thicknessCrystalX": 3,
+            "widthCrystalY": 2,
+            "widthCrystalZ": 2,
+            "thicknessMetalplateX": 2,
+            "widthSlitZ": 2,
+            "slitGap": 10,
+            "RadiusMetalplate": 99,
+            "RadiusDetectorFrontPlane": 100
+        },
+        "attenGAGG": 0.475,
+        "attenAir": 0,
+        "attenOpticalGlass": 0.0399,
+        "attenTungsten": 3.6323
+    },
+    "Image Volume": {
+        "numImageX": 8,
+        "numImageY": 8,
+        "numImageZ": 10,
+        "widthImageX": 1,
+        "widthImageY": 1,
+        "widthImageZ": 1,
+        "dimImageZ": 1,
+        "dimDetectorZ": 1
+    }
+}
