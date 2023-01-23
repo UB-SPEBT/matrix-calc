@@ -2,11 +2,9 @@
 
 Ray-tracing analytical calculation of the system response matrix of the scanner.
 
-System response matrix $A$ has element on $i_{\textit{th}}$ row and $j_{\textit{th}}$ column as $a_{i,j}$
+System response matrix $A$ has element on $i_{\textit{th}}$ row and $j_{\textit{th}}$ column as:
 
-$
-      a_{i,j}= \frac{1}{N_j}\sum_{i' \in i}\sum_{j' \in j}\frac{\Omega_{i',j'}}{4\pi} \cdot e^{-\int_{L_s}^{L_p} \mu(l)dl}\left(1-e^{-\int_{L_p}^{L_q} \mu(l)dl}\right)
-$
+$$a_{i,j}= \frac{1}{N_j}\sum_{i' \in i}\sum_{j' \in j}\frac{\Omega_{i',j'}}{4\pi} \cdot e^{-\int_{L_s}^{L_p} \mu(l)dl}\left(1-e^{-\int_{L_p}^{L_q} \mu(l)dl}\right)$$
 
 + $N_j$ is the number of sub-elements in $j_{\textit{th}}$ source voxel.
 + $\Omega_{i',j'}$ s the solid angle of $i'_{\textit{th}}$ sub-element in the detector to $j'_{\textit{th}}$ sub-element in the image volumn(or FOV).
