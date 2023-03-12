@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.11.0)
 project(SPEBT-SYSMAT-CAL VERSION 1.0.0)
 enable_language(CUDA)
 
-find_package(Boost 1.65 REQUIRED COMPONENTS program_options)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(Boost 1.65 REQUIRED COMPONENTS program_options)
 # include(CTest)
 # enable_testing()
 
@@ -14,10 +15,6 @@ include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
 add_executable(
     matcal src/main.cpp 
-    # src/PhotoDetector.cpp 
-    # src/IniFile.cpp 
-    # src/parameters.cpp  
-    # src/photodetector.cu)
     )
 
 # add_library(simplePrintf STATIC src/simplePrintf.cu)

@@ -1,0 +1,67 @@
+// Version: 1.0.0
+// Date: Dec-31-2022
+// Author: Fang Han [fhan0904@gmail.com]
+{
+    // Cuda settings
+    "CUDA setting": {
+        "CUDA Device ID": 1,
+        "Block Dim X": 8,
+        "Block Dim Y": 128
+    },
+    // Detector parameters
+    "Detector": {
+        "FOV Radius": 90, //mm
+        "N Panels": 6,
+        "N Modules Axial": 3,
+        "Cell Length X": 3.36, // Unit mm
+        "Cell Length Y": 3.36, // Unit mm
+        "Crystal Length X": 3.0, // Unit mm
+        "Crystal Length Y": 2.0, // Unit mm
+        "Crystal Length Z": 20.0, // Unit mm}
+        "N Crystal Segments": 5, // 5 is the default, do not change
+        "Detector N Subdivision X": 1,
+        "Detector N Subdivision Y": 1,
+        "Detector N Subdivision Z": 1,
+        // Attenuation constants
+        // "GAGG": 0.475,
+        // "Air": 0,
+        // "OpticalGlass": 0.0399,
+        // "Tungsten": 3.6323,
+        "Attenuation Constants": [
+            0,
+            0.475,
+            0.0399,
+            3.6323
+        ],
+        // Module configuration
+        "Module": {
+            "N Block X": 1,
+            "N Block Y": 1,
+            "Block": {
+                "N Cells X": 2,
+                "N Cells Y": 2,
+                "Pattern": [
+                    [
+                        1,
+                        0
+                    ],
+                    [
+                        0,
+                        1
+                    ]
+                ]
+            }
+        }
+    },
+    "Image Volume": {
+        "N Image Voxel X": 1,
+        "N Image Voxel Y": 1,
+        "N Image Voxel Z": 1,
+        "Image Voxel Length X": 1.0, // mm
+        "Image Voxel Length Y": 1.0, // mm
+        "Image Voxel Length Z": 1.0, // mm
+        "Voxel N Subdivision X": 1,
+        "Voxel N Subdivision Y": 1,
+        "Voxel N Subdivision Z": 1
+    }
+}
