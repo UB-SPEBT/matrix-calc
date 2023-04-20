@@ -4,7 +4,7 @@ enable_language(CUDA)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Boost 1.65 REQUIRED COMPONENTS program_options)
+find_package(Boost 1.65 REQUIRED COMPONENTS program_options log)
 # include(CTest)
 # enable_testing()
 
@@ -18,6 +18,7 @@ add_executable(
     )
 
 # add_library(simplePrintf STATIC src/simplePrintf.cu)
+add_library(cmd_args STATIC src/cmd_args.cpp)
 add_library(sysMatCalc_1z_1z STATIC src/sysMatCalc_1z_1z.cu)
 set_property(TARGET sysMatCalc_1z_1z PROPERTY CUDA_ARCHITECTURES "52;72") 
 
@@ -32,5 +33,5 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
 
-target_link_libraries(matcal ${Boost_LIBRARIES} sysMatCalc_1z_1z)
+target_link_libraries(matcal ${Boost_LIBRARIES} sysMatCalc_1z_1z cmd_args)
 # target_link_libraries(matcal ${Boost_LIBRARIES} )

@@ -1,10 +1,17 @@
-// Version: 1.0.0
-// Date: Dec-31-2022
+// Version: 1.0.1
+// Date: Mar-26-2023
 // Author: Fang Han [fhan0904@gmail.com]
 {
+    "Logger":{
+        "Level": "INFO",
+        "Filename": "info.log"
+    },
     // Cuda settings
     "CUDA setting": {
+        // If you have more than one GPU
         "CUDA Device ID": 1,
+        // Number of CUDA threads in a block. 
+        // DimX X DimY should be no greater than 1024.
         "Block Dim X": 8,
         "Block Dim Y": 128
     },
@@ -12,21 +19,21 @@
     "Detector": {
         "FOV Radius": 90, //mm
         "N Panels": 6,
-        "N Modules Axial": 3,
-        "Cell Length X": 3.36, // Unit mm
-        "Cell Length Y": 3.36, // Unit mm
-        "Crystal Length X": 3.0, // Unit mm
-        "Crystal Length Y": 2.0, // Unit mm
-        "Crystal Length Z": 20.0, // Unit mm}
+        "N Modules Axial": 1,
+        "Cell Length X": 3.36, // Unit mm, default 3.36
+        "Cell Length Y": 3.36, // Unit mm, default 3.36
+        "Crystal Length X": 3.0, // Unit mm, default 3.0
+        "Crystal Length Y": 2.0, // Unit mm, default 2.0
+        "Crystal Length Z": 20.0, // Unit mm, default 20.0
         "N Crystal Segments": 5, // 5 is the default, do not change
         "Detector N Subdivision X": 1,
         "Detector N Subdivision Y": 1,
         "Detector N Subdivision Z": 1,
         // Attenuation constants
-        // "GAGG": 0.475,
-        // "Air": 0,
-        // "OpticalGlass": 0.0399,
-        // "Tungsten": 3.6323,
+        // "GAGG": 0.475 /mm,
+        // "Air": 0, mm
+        // "OpticalGlass": 0.0399 /mm,
+        // "Tungsten": 3.6323 /mm,
         "Attenuation Constants": [
             0,
             0.475,
@@ -38,14 +45,30 @@
             "N Block X": 1,
             "N Block Y": 1,
             "Block": {
-                "N Cells X": 2,
-                "N Cells Y": 2,
+                "N Cells X": 4,
+                "N Cells Y": 4,
                 "Pattern": [
                     [
+                        1,
+                        0,
                         1,
                         0
                     ],
                     [
+                        0,
+                        1,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        1,
+                        0
+                    ],
+                    [
+                        0,
+                        1,
                         0,
                         1
                     ]
@@ -54,14 +77,14 @@
         }
     },
     "Image Volume": {
-        "N Image Voxel X": 1,
-        "N Image Voxel Y": 1,
-        "N Image Voxel Z": 1,
+        "N Image Voxel X": 10,
+        "N Image Voxel Y": 10,
+        "N Image Voxel Z": 50,
         "Image Voxel Length X": 1.0, // mm
         "Image Voxel Length Y": 1.0, // mm
         "Image Voxel Length Z": 1.0, // mm
-        "Voxel N Subdivision X": 1,
-        "Voxel N Subdivision Y": 1,
-        "Voxel N Subdivision Z": 1
+        "Voxel N Subdivision X": 2,
+        "Voxel N Subdivision Y": 2,
+        "Voxel N Subdivision Z": 2
     }
 }

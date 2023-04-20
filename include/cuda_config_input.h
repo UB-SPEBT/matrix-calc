@@ -21,12 +21,14 @@ struct configList {
   float theta;
   float fov_radius, panelW;
   int N_bordersX, N_bordersY, N_bordersZ;
-  int total_N_subCells, total_N_subImg, total_N_subDet;
+  long total_N_subCells, total_N_subImg, total_N_subDet;
+  int zIdx_img, zIdx_det;
 };
 
 inline void initConfList(struct configList *conf,
                          const rapidjson::Document &jsonDoc, float theta,
-                         std::vector<int> &N_borders, int total_N_subDet) {
+                         std::vector<int> &N_borders, int total_N_subDet,
+                         int zIdx_img, int zIdx_det) {
   conf->N_panel = jsonDoc["Detector"]["N Panels"].GetInt();
   conf->N_moduleZ = jsonDoc["Detector"]["N Modules Axial"].GetInt();
   conf->N_XtalSegZ = jsonDoc["Detector"]["N Crystal Segments"].GetInt();
@@ -59,8 +61,8 @@ inline void initConfList(struct configList *conf,
   conf->imgLenY = jsonDoc["Image Volume"]["Image Voxel Length Y"].GetFloat();
   conf->imgLenZ = jsonDoc["Image Volume"]["Image Voxel Length Z"].GetFloat();
   conf->imgSubLenX = conf->imgLenX / conf->N_imgSubX;
-  conf->imgSubLenY = conf->imgLenX / conf->N_imgSubZ;
-  conf->imgSubLenZ = conf->imgLenX / conf->N_imgSubY;
+  conf->imgSubLenY = conf->imgLenY / conf->N_imgSubY;
+  conf->imgSubLenZ = conf->imgLenZ / conf->N_imgSubZ;
   conf->theta = theta;
   conf->imgCenterX = conf->imgLenX * conf->N_imgX * 0.5;
   conf->imgCenterY = conf->imgLenY * conf->N_imgY * 0.5;
@@ -69,8 +71,11 @@ inline void initConfList(struct configList *conf,
   conf->N_bordersX = N_borders[0];
   conf->N_bordersY = N_borders[1];
   conf->N_bordersZ = N_borders[2];
-  conf->total_N_subCells = conf->N_subCellsX * conf->N_subCellsY;
-  conf->total_N_subImg =
-      conf->N_imgX * conf->N_imgY * conf->N_imgSubX * conf->N_imgSubZ;
+  conf->total_N_subCells =
+      conf->N_subCellsX * conf->N_subCellsY * conf->N_subCellsZ;
+  conf->total_N_subImg = conf->N_imgX * conf->N_imgY * conf->N_imgSubX *
+                         conf->N_imgSubY * conf->N_imgSubZ;
   conf->total_N_subDet = total_N_subDet;
+  conf->zIdx_det = zIdx_det;
+  conf->zIdx_img = zIdx_img;
 };
