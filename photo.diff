@@ -1,0 +1,585 @@
+diff --git a/1_numerical modeling/photodetector.cu b/1_numerical modeling/photodetector.cu
+index 8a91a02..07ab5ee 100644
+--- a/1_numerical modeling/photodetector.cu	
++++ b/1_numerical modeling/photodetector.cu	
+@@ -3,25 +3,44 @@
+ #include <math.h>
+ 
+ #include "photodetector.h"
+-#include <fstream> 
+-#include <stdio.h>  
++#include <fstream>
++#include <stdio.h>
+ #include <stdlib.h>
+ 
+-#include<cuda_runtime.h>
++#include <cuda_runtime.h>
+ #include <device_launch_parameters.h>
+ 
+-#define max(a,b) ((a>=b)?a:b) 
+-#define min(a,b) ((a<=b)?a:b)
++#define max(a, b) ((a >= b) ? a : b)
++#define min(a, b) ((a <= b) ? a : b)
+ 
+ using namespace std;
+ 
+-//choose the gpu
+-__global__ void photodetectorCudaMe(float* dst,
+-	float* deviceparameter,
+-	int numProjectionSingle,
+-	int numImagebin)
++// choose the gpu
++__global__ void photodetectorCudaMe(float *dst,
++									float *deviceparameter,
++									int numProjectionSingle,
++									int numImagebin)
+ 
+ {
++
++	int pattern[16][16] = {{1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0},
++	{0,1,0,0,0,0,1,0,1,1,1,0,0,1,1,1},
++	{1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0},
++	{1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0},
++	{1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0},
++	{1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0},
++	{0,1,0,0,0,0,1,0,1,1,1,0,0,1,1,1},
++	{1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0},
++	{0,1,0,0,0,0,1,0,1,1,1,0,0,1,1,1},
++	{0,1,0,0,0,0,1,0,1,1,1,0,0,1,1,1},
++	{0,1,0,0,0,0,1,0,1,1,1,0,0,1,1,1},
++	{1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0},
++	{1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0},
++	{0,1,0,0,0,0,1,0,1,1,1,0,0,1,1,1},
++	{0,1,0,0,0,0,1,0,1,1,1,0,0,1,1,1},
++	{0,1,0,0,0,0,1,0,1,1,1,0,0,1,1,1}};
++
++
+ 	int metalPlateMode = (int)deviceparameter[900];
+ 	int crystalArrayMode = (int)deviceparameter[901];
+ 
+@@ -29,48 +48,46 @@ __global__ void photodetectorCudaMe(float* dst,
+ 	float _float_numDetectorLayer = deviceparameter[2];
+ 
+ 	int numDetectorY[100], numDetectorZ[100];
+-	float _float_widthDetectorY[100], _float_widthDetectorZ[100];
+-	float _float_ThicknessDetector[100];
+-	float _float_RadiusDetector[100];
++	float detectorYWidth[100], detectorZWidth[100];
++	float detectorXWidth[100];
++	float detectorXpoint[100];
+ 
+ 	for (int i = 0; i < (int)_float_numDetectorLayer + 1; i++)
+ 	{
+-		//0:collimator; 1~4:detector
+-		numDetectorY[i] = deviceparameter[(i + 1) * 10];          // number of detector
+-		numDetectorZ[i] = deviceparameter[(i + 1) * 10 + 1];          // number of detector
+-		_float_RadiusDetector[i] = deviceparameter[(i + 1) * 10 + 2];          // Diameter
+-		_float_ThicknessDetector[i] = deviceparameter[(i + 1) * 10 + 3];   //ThicknessDetector
+-		_float_widthDetectorY[i] = deviceparameter[(i + 1) * 10 + 4];         //width
+-		_float_widthDetectorZ[i] = deviceparameter[(i + 1) * 10 + 5];         //width
+-
++		// 0:collimator; 1~4:detector
++		numDetectorY[i] = deviceparameter[(i + 1) * 10];				 // number of detector
++		numDetectorZ[i] = deviceparameter[(i + 1) * 10 + 1];			 // number of detector
++		detectorXpoint[i] = deviceparameter[(i + 1) * 10 + 2];	 // Diameter
++		detectorXWidth[i] = deviceparameter[(i + 1) * 10 + 3]; // ThicknessDetector
++		detectorYWidth[i] = deviceparameter[(i + 1) * 10 + 4];	 // width
++		detectorZWidth[i] = deviceparameter[(i + 1) * 10 + 5];	 // width
+ 	}
+ 
+-	float thicknessCrystalX = deviceparameter[401];
+-	float widthCrystalY = deviceparameter[402];
+-	float widthCrystalZ = deviceparameter[403];
++	float CrystalXWidth = deviceparameter[401];
++	float CrystalYWidth = deviceparameter[402];
++	float CrystalZWidth = deviceparameter[403];
+ 
+-	float _float_tungsten_attenuation_coeff = deviceparameter[4];  //1.882 * 1.93// tungsten_attenuation_coeff
++	float _float_tungsten_attenuation_coeff = deviceparameter[4]; // 1.882 * 1.93// tungsten_attenuation_coeff
+ 
+ 	float _float_detector_attenuation_coeff[11];
+-	_float_detector_attenuation_coeff[0] = deviceparameter[5];    //0 //AIR
+-	_float_detector_attenuation_coeff[1] = deviceparameter[6];    //0.475 //GAGG
+-	_float_detector_attenuation_coeff[2] = deviceparameter[7];    //OpticalGlass
+-
++	_float_detector_attenuation_coeff[0] = deviceparameter[5]; // 0 //AIR
++	_float_detector_attenuation_coeff[1] = deviceparameter[6]; // 0.475 //GAGG
++	_float_detector_attenuation_coeff[2] = deviceparameter[7]; // OpticalGlass
+ 
+-	float _float_totalnumDetectorZ = deviceparameter[300];
+-	float _float_startidxDetectorZ = deviceparameter[301];
++	float numDetectorinAxial = deviceparameter[300];
++	float idxDetectorZ = deviceparameter[301];
+ 
+-	float float_startidxPSFImageVoxelZ = deviceparameter[302];
++	float idxImageZ_1 = deviceparameter[302];
+ 
+ 	float slitGap = deviceparameter[16];
+ 
+-	float _float_divideX = deviceparameter[500];
+-	float _float_divideY = deviceparameter[501];
+-	float _float_divideZ = deviceparameter[502];
+-	float _float_MicroNum = deviceparameter[503];
++	float microUnitX = deviceparameter[500];
++	float microUnitY = deviceparameter[501];
++	float microUnitZ = deviceparameter[502];
++	float microUnitPreviousLayer = deviceparameter[503];
+ 
+-	float _float_ModuleNum = deviceparameter[600];
+-	float _float_DetectorinModule = deviceparameter[700];
++	float numPanel = deviceparameter[600]; //6
++	float numDetector = deviceparameter[700]; //32 = pixelSiPM * numModuleT
+ 
+ 	float _float_numImageVoxelX = deviceparameter[1017];
+ 	float _float_numImageVoxelY = deviceparameter[1018];
+@@ -90,15 +107,14 @@ __global__ void photodetectorCudaMe(float* dst,
+ 	float _float_widthPSFImageVoxelY = deviceparameter[1027];
+ 	float _float_widthPSFImageVoxelZ = deviceparameter[1028];
+ 
+-	float _float_dimDetectorZ = deviceparameter[1];//numDetector(axial);
+-
++	float _float_dimDetectorZ = deviceparameter[1]; // numDetector(axial);
+ 
+ 	int numDetectorLayer = (int)floor(_float_numDetectorLayer);
+ 	int dimDetectorZ = (int)floor(_float_dimDetectorZ);
+ 
+-	int totalnumDetectorZ = (int)floor(_float_totalnumDetectorZ);
+-	int startidxDetectorZ = (int)floor(_float_startidxDetectorZ);
+-	int startidxPSFImageVoxelZ = (int)floor(float_startidxPSFImageVoxelZ);
++	int totalnumDetectorZ = (int)floor(numDetectorinAxial);
++	int startidxDetectorZ = (int)floor(idxDetectorZ);
++	int startidxImageZ = (int)floor(idxImageZ_1);
+ 
+ 	int numImageVoxelX = (int)floor(_float_numImageVoxelX);
+ 	int numImageVoxelY = (int)floor(_float_numImageVoxelY);
+@@ -109,65 +125,69 @@ __global__ void photodetectorCudaMe(float* dst,
+ 	int numPSFImageVoxelY = (int)floor(_float_numPSFImageVoxelY);
+ 	int numPSFImageVoxelZ = (int)floor(_float_numPSFImageVoxelZ);
+ 
+-	//GPU thread
++	bool inside = false;
++
++	// GPU thread
+ 	int row = blockIdx.x * blockDim.x + threadIdx.x;
+-	if (row < 0 || row > numProjectionSingle - 1) { return; }
++	if (row < 0 || row > numProjectionSingle - 1)
++	{
++		return;
++	}
+ 	int col = blockIdx.y * blockDim.y + threadIdx.y;
+-	if (col < 0 || col > numImagebin - 1) { return; }
++	if (col < 0 || col > numImagebin - 1)
++	{
++		return;
++	}
+ 
+-	//DRF
++	// DRF
+ 	int dstIndex = row * numImagebin + col;
+ 
+-	//module index
+-	int moduleNum = (int)_float_ModuleNum;
+-	int DetectorinModule = (int)_float_DetectorinModule;
+-
+-
+-	int idxDetectorLayer = row / (dimDetectorZ * DetectorinModule * moduleNum); //radial, X coordinate
+-	row = row % (dimDetectorZ * DetectorinModule * moduleNum);
++	// module index
++	int numPanels = (int)numPanel;
++	int  numDetectorSinglePanel  = (int)numDetector;
+ 
+-	int idxDetectorY = row / dimDetectorZ;  //tangential, Y coordinate
+-	int idxDetectorZ = row % dimDetectorZ;  //axial, Z coordinate
++	int idxDetectorLayerX = row / ( numDetectorSinglePanel  * numPanels); // radial, X coordinate
++	row = row % ( numDetectorSinglePanel  * numPanels);
++	int idxDetectorY = row;// / dimDetectorZ; // tangential, Y coordinate
++	// idxZ in totalnumDetectorZ
+ 
+-	//idxZ in totalnumDetectorZ
+-	int idxDetectorlayerZ = startidxDetectorZ + idxDetectorZ;
+-
+-	int idxPSFImageVoxelZ = col / (numPSFImageVoxelY * numPSFImageVoxelX);
+-	idxPSFImageVoxelZ = startidxPSFImageVoxelZ + idxPSFImageVoxelZ;
++	int idxDetectorlayerZ = startidxDetectorZ;
++	int idxImageZ = startidxImageZ;
+ 
+ 	col = col % (numPSFImageVoxelY * numPSFImageVoxelX);
+-	int idxPSFImageVoxelY = col / numPSFImageVoxelX;
+-	int idxPSFImageVoxelX = col % numPSFImageVoxelX;
++	int idxImageY = col / numPSFImageVoxelX;
++	int idxImageX = col % numPSFImageVoxelX;
+ 
+-	const float divideX = (int)_float_divideX, divideY = (int)_float_divideY, divideZ = (int)_float_divideZ;
+-	int MicroNum = (int)_float_MicroNum;
++	const float divideX = (int)microUnitX, divideY = (int)microUnitY, divideZ = (int)microUnitZ;
++	int MicroNum = (int)microUnitPreviousLayer;
+ 
+-	float xImage = (idxPSFImageVoxelX - _float_numImageVoxelX / 2.0 + 0.5) * _float_widthPSFImageVoxelX;
+-	float yImage = (idxPSFImageVoxelY - _float_numImageVoxelY / 2.0 + 0.5) * _float_widthPSFImageVoxelY;
+-	float zImage = (idxPSFImageVoxelZ - _float_numImageVoxelZ / 2.0 + 0.5) * _float_widthPSFImageVoxelZ;
++	float xImage = (idxImageX - _float_numImageVoxelX / 2.0 + 0.5) * _float_widthPSFImageVoxelX;
++	float yImage = (idxImageY - _float_numImageVoxelY / 2.0 + 0.5) * _float_widthPSFImageVoxelY;
++	float zImage = (idxImageZ - _float_numImageVoxelZ / 2.0 + 0.5) * _float_widthPSFImageVoxelZ;
+ 
+-	int idxModule = idxDetectorY / DetectorinModule;
+-	idxDetectorY = idxDetectorY - DetectorinModule * idxModule;
++	int idxPanel = idxDetectorY /  numDetectorSinglePanel ;
++	idxDetectorY = idxDetectorY -  numDetectorSinglePanel  * idxPanel; 
+ 
+-	float moduleRot = 2 * M_PI / _float_ModuleNum * idxModule;
++	float moduleRot = 2 * M_PI / numPanel * idxPanel;
+ 
+ 	float _float_translationLength = deviceparameter[800];
+ 	float _float_numTranslation = deviceparameter[801];
+ 	float _float_idxTranslationZ = deviceparameter[803];
+ 
+-	float  attenuation_coefficient_each, attenuation_coefficient_final, attenuation_dist, attenuation_distFINAL,
++	float attenuation_coefficient_each, attenuation_coefficient_final, attenuation_dist, attenuation_distFINAL,
+ 		distancesq, COSangle, solid_angle;
+ 
++    //dst[idxDetectorLayerX][idxPanel][idxDetectorY][idxImageX][idxImageY] = 0;
+ 	dst[dstIndex] = 0;
+ 
+ 	float detection_eff_each;
+ 	float CrystalR;
+-	float zDetector0 = (idxDetectorlayerZ - totalnumDetectorZ / 2.0 + 0.5) * _float_widthDetectorZ[idxDetectorLayer + 1];
++	float zDetector0 = (idxDetectorlayerZ - totalnumDetectorZ / 2.0 + 0.5) * detectorZWidth[idxDetectorLayerX + 1];
+ 
+-	//CENTER OF THE PANEL
++	// CENTER OF THE PANEL
+ 	float detectorX0, detectorY0;
+-	float detectorY00 = (-0.5 * DetectorinModule + idxDetectorY + 0.5) * _float_widthDetectorY[idxDetectorLayer + 1];
+-	float xDetector, yDetector,zDetector;
++	float detectorY00 = (-0.5 *  numDetectorSinglePanel  + idxDetectorY + 0.5) * detectorYWidth[idxDetectorLayerX + 1];
++	float xDetector, yDetector, zDetector;
+ 
+ 	float MicroCOSangle, length;
+ 
+@@ -187,7 +207,6 @@ __global__ void photodetectorCudaMe(float* dst,
+ 	}
+ 	else
+ 	{
+-		//对探测器划分微元单位
+ 		for (int NumZ = 0; NumZ < divideZ; NumZ++)
+ 		{
+ 			for (int NumY = 0; NumY < divideY; NumY++)
+@@ -195,17 +214,24 @@ __global__ void photodetectorCudaMe(float* dst,
+ 				for (int NumX = 0; NumX < divideX; NumX++)
+ 				{
+ 					detection_eff_each = 1;
+-					CrystalR = _float_RadiusDetector[idxDetectorLayer + 1] + ((NumX + 0.5) / (float)divideX - 0.5) * thicknessCrystalX;
+-
+-					zDetector = zDetector0 + ((float)(NumZ + 0.5) / (float)divideZ - 0.5) * widthCrystalZ;
+ 
+-					//旋转变换计算module坐标
++					//Calculate the center coordiantes for the microunit
++					float start_crystalX =  detectorXpoint[idxDetectorLayerX + 1] - (CrystalXWidth/2);
++					float start_crystalY =  detectorY00 - (CrystalYWidth/2);
++					float start_crystalZ =  zDetector0 - (CrystalZWidth/2);
++					
++					CrystalR = start_crystalX + ((NumX + 0.5) * (CrystalXWidth/divideX));
++					zDetector = start_crystalZ + ((NumZ + 0.5) * (CrystalZWidth/divideZ));
+ 					detectorX0 = CrystalR;
+-					detectorY0 = detectorY00 + ((float)(NumY + 0.5) / (float)divideY - 0.5) * widthCrystalY;
++					detectorY0 = start_crystalY + ((NumY + 0.5) * (CrystalYWidth/divideY));
++					//detectorY0 = detectorY00;// + ((float)(NumY + 0.5) / (float)divideY - 0.5) * CrystalYWidth;
++
++					//Rotate the point
+ 					xDetector = cos(moduleRot) * detectorX0 - sin(moduleRot) * detectorY0;
+ 					yDetector = sin(moduleRot) * detectorX0 + cos(moduleRot) * detectorY0;
+ 
+-					//计算0位置module中心的micro坐标
++					//(xDetector,yDetector,zDetector) - center of the MicroUnit
++
+ 					float detectorX00 = CrystalR;
+ 
+ 					float x11 = cos(moduleRot) * detectorX00 - sin(moduleRot) * 0.0;
+@@ -214,38 +240,34 @@ __global__ void photodetectorCudaMe(float* dst,
+ 
+ 					distancesq = (yDetector - yImage) * (yDetector - yImage) + (xDetector - xImage) * (xDetector - xImage) + (zDetector - zImage) * (zDetector - zImage);
+ 
+-					//angle between module plane and LOR 
++					// angle between module plane and LOR
+ 					float a = sqrt(distancesq);
+ 					float b = sqrt(x11 * x11 + y11 * y11 + z11 * z11);
+ 					float c = (xDetector - xImage) * x11 + (yDetector - yImage) * y11 + (zDetector - zImage) * z11;
+ 					COSangle = c / (a * b);
+ 
+-					//COSangle = (yDetector - yImage) / sqrt(distancesq);
+-					solid_angle = (widthCrystalY * widthCrystalZ / (divideY * divideZ)) / (4 * M_PI * distancesq) * COSangle;
++					//Calculate Solid Angle
++					solid_angle = (CrystalYWidth * CrystalZWidth / (divideY * divideZ)) / (4 * M_PI * distancesq) * COSangle;
+ 
+ 
+-					//衰减
+ 					attenuation_dist = 0;
+-					for (int m = 0; m <= idxDetectorLayer + 1; m++)//0:准直器 || 1-3:探测器
+-					//{
+-					//for (int m = 0; m <= 0; m++)//0:准直器 || 1-3:探测器
++					for (int m = 0; m <= idxDetectorLayerX + 1; m++) 
+ 					{
+ 						for (int idxMicro = 0; idxMicro < MicroNum; idxMicro++)
+ 						{
+-							//debug
+-							//int m = 0;
+-							/* int idxMicro = 0;*/
+-
+ 							coeff = 0;
+ 
+-							float MicroR = _float_RadiusDetector[m] + ((idxMicro + 0.5) / (float)MicroNum - 0.5) * _float_ThicknessDetector[m];
+-							if (m == idxDetectorLayer + 1)
+-							{
+-								MicroR = _float_RadiusDetector[m] - 0.5 * _float_ThicknessDetector[m] + ((idxMicro + 0.5) / (float)MicroNum) * _float_ThicknessDetector[m] * (float)(NumX) / (float)divideX;
+-							}
+-							//zMicro = zImage; //2D detector
++							//Calculate center of the microunit
++							float M_start_crystalX =  detectorXpoint[m+1] - (CrystalXWidth/2);
++							float MicroR = start_crystalX + ((idxMicro + 0.5) * (CrystalXWidth/divideX));
++
++							//float MicroR = detectorXpoint[m];// + ((idxMicro + 0.5) / (float)MicroNum - 0.5) * detectorXWidth[m];
++							// if (m == idxDetectorLayerX + 1)
++							// {
++							// 	MicroR = detectorXpoint[m];// - 0.5 * detectorXWidth[m] + ((idxMicro + 0.5) / (float)MicroNum) * detectorXWidth[m] * (float)(NumX) / (float)divideX;
++							// }
++							// zMicro = zImage; //2D detector
+ 
+-							//计算0位置module中心的micro坐标
+ 							float xMicro0 = MicroR;
+ 							float yMicro0 = 0.;
+ 							float zMicro0 = 0.;
+@@ -254,7 +276,7 @@ __global__ void photodetectorCudaMe(float* dst,
+ 							float yMicro1 = sin(moduleRot) * xMicro0 + cos(moduleRot) * yMicro0;
+ 							float zMicro1 = zMicro0;
+ 
+-							//dst[dstIndex] = xMicro1;
++							// dst[dstIndex] = xMicro1;
+ 
+ 							float x0 = xImage, y0 = yImage, z0 = zImage, x2 = xDetector, y2 = yDetector, z2 = zDetector, x1 = xMicro1, y1 = yMicro1, z1 = zMicro1;
+ 
+@@ -276,62 +298,66 @@ __global__ void photodetectorCudaMe(float* dst,
+ 							else
+ 							{
+ 								xMicro = temp2 / temp;
+-								//float yMicro = -x1 * (xMicro - x1) / y1 + y1;
++								// float yMicro = -x1 * (xMicro - x1) / y1 + y1;
+ 								yMicro = (y2 - y0) / (x2 - x0) * (xMicro - x0) + y0;
+ 								zMicro = (xMicro - x0) / (x2 - x0) * (z2 - z0) + z0;
+ 							}
+ 
+-							//COSangle
++							// COSangle
+ 							a = sqrt((yMicro - y0) * (yMicro - y0) + (xMicro - x0) * (xMicro - x0) + (zMicro - z0) * (zMicro - z0));
+ 							b = sqrt(x1 * x1 + y1 * y1 + z1 * z1);
+ 							c = (xMicro - x0) * x1 + (yMicro - y0) * y1 + (zMicro - z0) * z1;
+ 							MicroCOSangle = c / (a * b);
+ 
+-							//length
+-							length = _float_ThicknessDetector[m] / MicroCOSangle / (float)MicroNum;
+-							if (m == idxDetectorLayer + 1)
++							// length
++							length = detectorXWidth[m] / MicroCOSangle / (float)MicroNum;
++							if (m == idxDetectorLayerX + 1)
+ 							{
+-								length = _float_ThicknessDetector[m] * (float)(NumX) / (float)divideX / MicroCOSangle / (float)MicroNum;
++								length = detectorXWidth[m] / MicroCOSangle / (float)MicroNum * (float)(NumX) / (float)divideX / MicroCOSangle / (float)MicroNum;
+ 							}
+ 
+-							//计算衰减系数
++							//锟斤拷锟斤拷衰锟斤拷系锟斤拷
+ 							xMicro00 = cos(-moduleRot) * xMicro - sin(-moduleRot) * yMicro;
+ 							yMicro00 = sin(-moduleRot) * xMicro + cos(-moduleRot) * yMicro;
+ 							zMicro00 = zMicro;
+ 
++							float idxtemp = yMicro00 + numDetectorY[m] / 2 * detectorYWidth[m];
++							idxDetectorYmicro = floor(idxtemp / detectorYWidth[m]);
+ 
++							idxDetectorZmicro = floor((zMicro + (float)numDetectorZ[m] * detectorZWidth[m] / 2.0) / detectorZWidth[m]);
+ 
+-							float idxtemp = yMicro00 + numDetectorY[m] / 2 * _float_widthDetectorY[m];
+-							idxDetectorYmicro = floor(idxtemp / _float_widthDetectorY[m]);
+-
+-							idxDetectorZmicro = floor((zMicro + (float)numDetectorZ[m] * _float_widthDetectorZ[m] / 2.0) / _float_widthDetectorZ[m]);
+-
+-							if ((yMicro00 < -1.0 * numDetectorY[idxDetectorLayer + 1] / 2.0 * _float_widthDetectorY[idxDetectorLayer + 1]) ||
+-								(yMicro00 > numDetectorY[idxDetectorLayer + 1] / 2.0 * _float_widthDetectorY[idxDetectorLayer + 1]) ||
+-								(zMicro00 < -1.0 * (float)numDetectorZ[idxDetectorLayer + 1] / 2.0 * _float_widthDetectorZ[idxDetectorLayer + 1]) ||
+-								(zMicro00 > (float)numDetectorZ[idxDetectorLayer + 1] / 2.0 * _float_widthDetectorZ[idxDetectorLayer + 1]))
++							if ((yMicro00 < -1.0 * numDetectorY[idxDetectorLayerX + 1] / 2.0 * detectorYWidth[idxDetectorLayerX + 1]) ||
++								(yMicro00 > numDetectorY[idxDetectorLayerX + 1] / 2.0 * detectorYWidth[idxDetectorLayerX + 1]) ||
++								(zMicro00 < -1.0 * (float)numDetectorZ[idxDetectorLayerX + 1] / 2.0 * detectorZWidth[idxDetectorLayerX + 1]) ||
++								(zMicro00 > (float)numDetectorZ[idxDetectorLayerX + 1] / 2.0 * detectorZWidth[idxDetectorLayerX + 1]))
+ 							{
+-								coeff = 10000.0;  
++								coeff = 10000.0;
+ 							}
+ 							else
+ 							{
+ 								coeff = 0;
+ 
+-								isInCrystalY = abs(idxtemp - (idxDetectorYmicro + 0.5) * _float_widthDetectorY[m]) <= widthCrystalY / 2.0;
+-								isInCrystalX = abs(xMicro00 - _float_RadiusDetector[m]) <= thicknessCrystalX / 2.0;
++								isInCrystalY = abs(idxtemp - (idxDetectorYmicro + 0.5) * detectorYWidth[m]) <= CrystalYWidth / 2.0;
++								isInCrystalX = abs(xMicro00 - detectorXpoint[m]) <= CrystalXWidth / 2.0;
+ 
+ 								isDetectorZmicro = idxDetectorZmicro % 2;
+ 								isMosaicXYmicro;
+ 
+-								if (crystalArrayMode == 0) //1010
++								if (crystalArrayMode == 0) // 1010
+ 								{
+ 									isMosaicXYmicro = (idxDetectorYmicro + (m + 1)) % 2;
+ 								}
+-								if (crystalArrayMode == 1) //1100
++								if (crystalArrayMode == 1) // 1100
+ 								{
+ 									isMosaicXYmicro = (((idxDetectorYmicro % 4 == 0 || idxDetectorYmicro % 4 == 1) && ((m + 1) % 4 == 0 || (m + 1) % 4 == 1)) ||
+-										((idxDetectorYmicro % 4 == 2 || idxDetectorYmicro % 4 == 3) && ((m + 1) % 4 == 2 || (m + 1) % 4 == 3)));
++													   ((idxDetectorYmicro % 4 == 2 || idxDetectorYmicro % 4 == 3) && ((m + 1) % 4 == 2 || (m + 1) % 4 == 3)));
++								}
+ 
++								if( crystalArrayMode == 2)
++								{
++									//printf("inside");
++									int n = (idxDetectorYmicro)%16;
++									isMosaicXYmicro = pattern[(m+1)%16][n];
+ 								}
+ 
+ 								if (isInCrystalX && isInCrystalY)
+@@ -346,16 +372,15 @@ __global__ void photodetectorCudaMe(float* dst,
+ 									}
+ 								}
+ 
+-								if (m == 0) //colli
++								if (m == 0) // colli
+ 								{
+ 
+-									//translation
++									// translation
+ 									zMicro00 = zMicro00 + _float_translationLength / _float_numTranslation * _float_idxTranslationZ;
+-									zMicro00 = zMicro00 + (float)numDetectorZ[m] * _float_widthDetectorZ[m] / 2.0;
++									zMicro00 = zMicro00 + (float)numDetectorZ[m] * detectorZWidth[m] / 2.0;
+ 									idxDetectorZmicro = floor(zMicro00 / slitGap);
+-									coeff_crossing = abs(zMicro00- (idxDetectorZmicro+0.5)* slitGap) < 0.5* _float_widthDetectorZ[m]; //translation
++									coeff_crossing = abs(zMicro00 - (idxDetectorZmicro + 0.5) * slitGap) < 0.5 * detectorZWidth[m]; // translation
+ 									coeff = _float_tungsten_attenuation_coeff * (1 - coeff_crossing) * metalPlateMode;
+-									
+ 								}
+ 							}
+ 
+@@ -366,55 +391,55 @@ __global__ void photodetectorCudaMe(float* dst,
+ 							attenuation_dist = attenuation_dist + coeff * length;
+ 						}
+ 
+-					}//idxDetectorLayer
++					} // idxDetectorLayer
+ 					detection_eff_each = detection_eff_each * exp(-attenuation_dist);
+ 
+-
+-
+-					//吸收
+ 					attenuation_coefficient_each = 0;
+ 					bool isMosaic;
+-					if (crystalArrayMode == 0) //1010
++					if (crystalArrayMode == 0) // 1010
+ 					{
+-						isMosaic = (idxDetectorY + idxDetectorLayer) % 2;
++						isMosaic = (idxDetectorY + idxDetectorLayerX) % 2;
+ 					}
+-					if (crystalArrayMode == 1) //1100
++					if (crystalArrayMode == 1) // 1100
+ 					{
+-						isMosaic = ((idxDetectorY % 4 == 0 || idxDetectorY % 4 == 1) && (idxDetectorLayer % 4 == 0 || idxDetectorLayer % 4 == 1)) ||
+-							((idxDetectorY % 4 == 2 || idxDetectorY % 4 == 3) && (idxDetectorLayer % 4 == 2 || idxDetectorLayer % 4 == 3));
++						isMosaic = ((idxDetectorY % 4 == 0 || idxDetectorY % 4 == 1) && (idxDetectorLayerX % 4 == 0 || idxDetectorLayerX % 4 == 1)) ||
++								   ((idxDetectorY % 4 == 2 || idxDetectorY % 4 == 3) && (idxDetectorLayerX % 4 == 2 || idxDetectorLayerX % 4 == 3));
+ 					}
+ 
+-					 bool isDetectorLayerZ = idxDetectorlayerZ % 2;
++					if( crystalArrayMode == 2)
++					{
++						//printf("inside");
++						int n = (idxDetectorY)%16;
++						isMosaic = pattern[idxDetectorLayerX%16][n];
++					}
++					bool isDetectorLayerZ = idxDetectorlayerZ % 2;
+ 					if (isMosaic == isDetectorLayerZ)
+ 					{
+ 						attenuation_coefficient_each = _float_detector_attenuation_coeff[1];
+ 					}
+ 
+-					if (idxDetectorLayer + 1 == numDetectorLayer)
++					if (idxDetectorLayerX + 1 == numDetectorLayer)
+ 					{
+ 						attenuation_coefficient_each = _float_detector_attenuation_coeff[1];
+ 					}
+-					attenuation_distFINAL = (_float_ThicknessDetector[idxDetectorLayer + 1] / divideX) / COSangle * attenuation_coefficient_each;
+-
++					attenuation_distFINAL = (detectorXWidth[idxDetectorLayerX + 1] / divideX) / COSangle * attenuation_coefficient_each;
++                    //dst[idxImageX][idxImageY][idxDetectorLayerX][idxDetectorY] += detection_eff_each * solid_angle * (1 - exp(-attenuation_distFINAL)); 
+ 					dst[dstIndex] += detection_eff_each * solid_angle * (1 - exp(-attenuation_distFINAL));
+-				}//divideX
+-			}//divideY
+-		}//divideZ
+-		//dst[dstIndex] = zMicro00;
+-	} //diameter=180mm
+-	
++				} // divideX
++			}	  // divideY
++		}		  // divideZ
++		// dst[dstIndex] = zMicro00;
++	} // diameter=180mm
+ }
+ 
+-int photodetector(float* parameter, float* dst)
++int photodetector(float *parameter, float *dst)
+ {
+ 
+ 	float _float_totalnumDetector = parameter[3];
+ 	float _float_numDetectorZ = parameter[1];
+-
++    float _float_numDetectorX = parameter[2];
++    float _float_numDetectorY = parameter[700];
+ 	float _float_numImageSliceZ = parameter[1000];
+-	float _float_numImageSliceY = parameter[1001];
+-	float _float_numImageSliceX = parameter[1002];
+-
+ 	float _float_numPSFImageVoxelX = parameter[1017];
+ 	float _float_numPSFImageVoxelY = parameter[1018];
+ 	float _float_numPSFImageVoxelZ = parameter[1019];
+@@ -423,15 +448,14 @@ int photodetector(float* parameter, float* dst)
+ 	int numDetectorZ = (int)floor(_float_numDetectorZ);
+ 
+ 	int numImageSliceZ = (int)floor(_float_numImageSliceZ);
+-	int numImageSliceY = (int)floor(_float_numImageSliceY);
+-	int numImageSliceX = (int)floor(_float_numImageSliceX);
+-
+ 	int numPSFImageVoxelX = (int)floor(_float_numPSFImageVoxelX);
+ 	int numPSFImageVoxelY = (int)floor(_float_numPSFImageVoxelY);
+ 	int numPSFImageVoxelZ = (int)floor(_float_numPSFImageVoxelZ);
+ 
+-	int numProjectionSingle = totalnumDetector * numDetectorZ;
+-	int numImagebin = numPSFImageVoxelX * numPSFImageVoxelY * numImageSliceZ;
++	int numProjectionSingle = totalnumDetector;
++	int numImagebin = numPSFImageVoxelX * numPSFImageVoxelY;
++    int numDetectorX = (int)floor(_float_numDetectorX);
++    int numDetectorY = (int)floor(_float_numDetectorY);
+ 
+ 	float* deviceMatrix, * deviceparameter;
+ 	cudaMalloc(&deviceMatrix, sizeof(float) * numProjectionSingle * numImagebin);
+@@ -456,7 +480,7 @@ int photodetector(float* parameter, float* dst)
+ 		numProjectionSingle,
+ 		numImagebin);
+ 
+-	//cudaThreadSynchronize();
++	// cudaThreadSynchronize();
+ 	float* test = new float[1280];
+ 	cudaMemcpy(dst, deviceMatrix, sizeof(float) * numProjectionSingle * numImagebin, cudaMemcpyDeviceToHost);
+ 	cudaMemcpy(test, deviceparameter, sizeof(float) * 1280, cudaMemcpyDeviceToHost);
+@@ -472,6 +496,5 @@ int photodetector(float* parameter, float* dst)
+ 	cudaFree(deviceparameter);
+ 	cudaFree(deviceMatrix);
+ 
+-
+-	return(numImagebin);
++	return (numImagebin);
+ }

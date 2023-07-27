@@ -5,11 +5,12 @@
 
 float* Parameters(float* parameter);
 
-int ReadParFile(string ParameterFileName);
+int ReadInputJson();
 
 extern int photodetector(
 	float* parameter, 
 	float* dst);
 
+string GetSysmatPath();
 
 #endif //_PHOTODETECTORCUDA_H_
