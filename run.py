@@ -5,8 +5,8 @@ import os
 import time
 
 CUDA_VERSION_11_8_0 = True
-# To use modified solid angle calculation, set this flag True
-MSAC = False
+# To use Fang's method for solid angle calculation, set this flag True
+USE_FANGS_METHOD = False
 
 
 # commands = [
@@ -21,18 +21,18 @@ MSAC = False
 
 
 if CUDA_VERSION_11_8_0:
-	# 11.8.0
+	# 11.8.0 (newer version)
 	CUDA_PATH = '/cvmfs/soft.ccr.buffalo.edu/versions/2023.01/easybuild/software/Core/cuda/11.8.0/include'
 	ADDITIONAL_PARAM = '-Xcompiler "-Xlinker -rpath=/opt/software/nvidia/lib64"'
 else:
-	# 11.3.1
+	# 11.3.1 (older version)
 	CUDA_PATH = '/usr/local/cuda/include/'
 	ADDITIONAL_PARAM = ''
 
-if MSAC:
-	PHOTODETECTOR_CUDA = 'photodetector.cu'
+if USE_FANGS_METHOD:
+	PHOTODETECTOR_CUDA = "photodetector_fangs_method.cu"
 else:
-	PHOTODETECTOR_CUDA = "photodetector_msac.cu"
+	PHOTODETECTOR_CUDA = "photodetector.cu"
 
 commands = [
 	'nvcc --version',
